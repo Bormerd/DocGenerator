@@ -45,31 +45,36 @@ def main():
         print("Указанный путь не найден.")
         return
 
-    if input_path.is_file():
-        if input_path.suffix == ".py":
-            data = parse_python_file(input_path)
-        elif input_path.suffix == ".js":
-            data = parse_javascript_file(input_path)
+    try:
+        if input_path.is_file():
+            if input_path.suffix == ".py":
+                data = parse_python_file(input_path)
+            elif input_path.suffix == ".js":
+                data = parse_javascript_file(input_path)
+            else:
+                print("Можно обрабатывать только файлы .py и .js.")
+                return
+
+            markdown = generate_markdown(data, args.template)
+
+        elif input_path.is_dir():
+            files_data = parse_project_directory(input_path)
+
+            if not files_data:
+                print("В указанной папке не найдены файлы .py или .js.")
+                return
+
+            markdown = generate_project_markdown(
+                files_data,
+                args.template,
+            )
+
         else:
-            print("Можно обрабатывать только файлы .py и .js.")
+            print("Указанный путь не является файлом или папкой.")
             return
 
-        markdown = generate_markdown(data, args.template)
-
-    elif input_path.is_dir():
-        files_data = parse_project_directory(input_path)
-
-        if not files_data:
-            print("В указанной папке не найдены файлы .py или .js.")
-            return
-
-        markdown = generate_project_markdown(
-            files_data,
-            args.template,
-        )
-
-    else:
-        print("Указанный путь не является файлом или папкой.")
+    except SyntaxError as error:
+        print(f"Ошибка синтаксиса в исходном коде (строка {error.lineno}): {error.msg}")
         return
 
     Path(args.output).write_text(markdown, encoding="utf-8")
